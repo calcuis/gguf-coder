@@ -1,0 +1,1 @@
+{"version":3,"file":"vscode-extension-prompt.d.ts","sourceRoot":"","sources":["../../source/components/vscode-extension-prompt.tsx"],"names":[],"mappings":"AAWA,UAAU,0BAA0B;IACnC,UAAU,EAAE,MAAM,IAAI,CAAC;IACvB,MAAM,EAAE,MAAM,IAAI,CAAC;CACnB;AA8BD,wBAAgB,qBAAqB,CAAC,EACrC,UAAU,EACV,MAAM,GACN,EAAE,0BAA0B,kDAqJ5B;AAED;;;GAGG;AACH,wBAAgB,4BAA4B,IAAI,OAAO,CAQtD"}
