@@ -1,0 +1,1 @@
+{"version":3,"file":"model-database.d.ts","sourceRoot":"","sources":["../../source/commands/model-database.tsx"],"names":[],"mappings":"AAUA,OAAO,EAAS,OAAO,EAAa,MAAM,eAAe,CAAC;AAO1D,UAAU,yBAAyB;IAClC,QAAQ,CAAC,EAAE,MAAM,IAAI,CAAC;CACtB;AAED,iBAAS,oBAAoB,CAAC,EAAC,QAAQ,EAAC,EAAE,yBAAyB,kDA8MlE;AAsLD,OAAO,EAAC,oBAAoB,EAAC,CAAC;AAE9B,eAAO,MAAM,oBAAoB,EAAE,OAMlC,CAAC"}
