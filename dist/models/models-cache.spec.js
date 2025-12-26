@@ -1,0 +1,166 @@
+import test from 'ava';
+import { unlink, writeFile, readFile, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { readCache, writeCache, } from './models-cache.js';
+// Get the actual cache file path that will be used
+// We need to import dynamically to get the actual path at runtime
+let actualCachePath;
+async function getCacheFilePath() {
+    // Import dynamically to avoid module resolution issues during testing
+    const { xdgCache } = await import('xdg-basedir');
+    const path = await import('node:path');
+    const DEFAULT_CACHE_DIR = process.platform === 'darwin'
+        ? path.join(process.env.HOME || '~', 'Library', 'Caches')
+        : path.join(process.env.HOME || '~', '.cache');
+    const cacheBase = xdgCache || DEFAULT_CACHE_DIR;
+    return path.join(cacheBase, 'coder', 'models.json');
+}
+// ============================================================================
+// Setup and Teardown
+// ============================================================================
+test.before(async () => {
+    actualCachePath = await getCacheFilePath();
+});
+test.afterEach.always(async () => {
+    // Clean up test cache file after each test
+    if (actualCachePath && existsSync(actualCachePath)) {
+        try {
+            await unlink(actualCachePath);
+        }
+        catch {
+            // Ignore cleanup errors
+        }
+    }
+});
+// ============================================================================
+// Tests for readCache
+// ============================================================================
+test('readCache returns null when cache file does not exist', async (t) => {
+    // Ensure cache file doesn't exist
+    if (existsSync(actualCachePath)) {
+        await unlink(actualCachePath);
+    }
+    const result = await readCache();
+    t.is(result, null);
+});
+test('readCache returns valid cached data', async (t) => {
+    const mockData = {
+        data: { models: [] },
+        fetchedAt: Date.now() - 1000,
+        expiresAt: Date.now() + 1000000, // Not expired
+    };
+    // Ensure directory exists
+    const dir = join(actualCachePath, '..');
+    try {
+        await mkdir(dir, { recursive: true });
+    }
+    catch {
+        // Directory may already exist
+    }
+    await writeFile(actualCachePath, JSON.stringify(mockData), 'utf-8');
+    const result = await readCache();
+    t.truthy(result);
+    t.deepEqual(result?.data, mockData.data);
+    t.is(result?.fetchedAt, mockData.fetchedAt);
+    t.is(result?.expiresAt, mockData.expiresAt);
+});
+test('readCache returns null when cache is expired', async (t) => {
+    const expiredData = {
+        data: { models: [] },
+        fetchedAt: Date.now() - 1000000,
+        expiresAt: Date.now() - 1000, // Expired
+    };
+    // Ensure directory exists
+    const dir = join(actualCachePath, '..');
+    try {
+        await mkdir(dir, { recursive: true });
+    }
+    catch {
+        // Directory may already exist
+    }
+    await writeFile(actualCachePath, JSON.stringify(expiredData), 'utf-8');
+    const result = await readCache();
+    t.is(result, null);
+});
+test('readCache returns null on JSON parse error', async (t) => {
+    // Ensure directory exists
+    const dir = join(actualCachePath, '..');
+    try {
+        await mkdir(dir, { recursive: true });
+    }
+    catch {
+        // Directory may already exist
+    }
+    await writeFile(actualCachePath, 'invalid json{{{', 'utf-8');
+    const result = await readCache();
+    t.is(result, null);
+});
+// ============================================================================
+// Tests for writeCache
+// ============================================================================
+test('writeCache writes cache data correctly', async (t) => {
+    const mockData = { models: [{ id: 'test-model' }] };
+    await writeCache(mockData);
+    // Verify the file was written
+    const exists = existsSync(actualCachePath);
+    t.true(exists);
+    // Verify the content
+    const content = await readFile(actualCachePath, 'utf-8');
+    const writtenData = JSON.parse(content);
+    t.truthy(writtenData.data);
+    t.truthy(writtenData.fetchedAt);
+    t.truthy(writtenData.expiresAt);
+    t.true(writtenData.expiresAt > Date.now());
+});
+test('writeCache creates directory if it does not exist', async (t) => {
+    const mockData = { models: [] };
+    // This should not throw even if directory doesn't exist
+    await t.notThrowsAsync(async () => {
+        await writeCache(mockData);
+    });
+    // Verify the file was created
+    t.true(existsSync(actualCachePath));
+});
+// ============================================================================
+// Integration-like tests
+// ============================================================================
+test('cache expiration is calculated correctly', async (t) => {
+    const mockData = { models: [] };
+    const now = Date.now();
+    await writeCache(mockData);
+    const content = await readFile(actualCachePath, 'utf-8');
+    const writtenData = JSON.parse(content);
+    // Get the expiration constant
+    const { CACHE_MODELS_EXPIRATION_MS } = await import('../constants.js');
+    // Expiration should be roughly CACHE_MODELS_EXPIRATION_MS in the future
+    t.true(writtenData.expiresAt >= now + CACHE_MODELS_EXPIRATION_MS - 100);
+    t.true(writtenData.expiresAt <= now + CACHE_MODELS_EXPIRATION_MS + 100);
+});
+test('readCache and writeCache round-trip correctly', async (t) => {
+    const originalData = {
+        models: [
+            { id: 'model1', name: 'Test Model 1' },
+            { id: 'model2', name: 'Test Model 2' },
+        ],
+    };
+    // Write the cache
+    await writeCache(originalData);
+    // Read it back
+    const readResult = await readCache();
+    t.truthy(readResult);
+    t.deepEqual(readResult?.data, originalData);
+});
+test('writeCache overwrites existing cache', async (t) => {
+    // Write first cache
+    const firstData = { models: [{ id: 'model1' }] };
+    await writeCache(firstData);
+    // Write second cache (should overwrite)
+    const secondData = { models: [{ id: 'model2' }, { id: 'model3' }] };
+    await writeCache(secondData);
+    // Read back
+    const readResult = await readCache();
+    t.truthy(readResult);
+    t.deepEqual(readResult?.data, secondData);
+});
+//# sourceMappingURL=models-cache.spec.js.map
