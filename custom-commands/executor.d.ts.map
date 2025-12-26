@@ -1,0 +1,1 @@
+{"version":3,"file":"executor.d.ts","sourceRoot":"","sources":["../../source/custom-commands/executor.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAC,aAAa,EAAC,MAAM,eAAe,CAAC;AAEjD,qBAAa,qBAAqB;IACjC;;OAEG;IACH,OAAO,CAAC,OAAO,EAAE,aAAa,EAAE,IAAI,EAAE,MAAM,EAAE,GAAG,MAAM;IA+BvD;;OAEG;IACH,UAAU,CAAC,OAAO,EAAE,aAAa,GAAG,MAAM;CAsB1C"}
