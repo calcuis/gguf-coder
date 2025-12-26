@@ -1,0 +1,463 @@
+const urlValidator = (value) => {
+    if (!value)
+        return undefined;
+    try {
+        const url = new URL(value);
+        // Check protocol
+        if (!['http:', 'https:'].includes(url.protocol)) {
+            return 'URL must use http or https protocol';
+        }
+        // HTTP is fine for local/private networks - no warning needed
+        // Only warn for truly remote (public) servers
+        const hostname = url.hostname;
+        const isLocal = hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname === '::1' ||
+            hostname.endsWith('.local') ||
+            hostname.startsWith('10.') || // Private class A
+            hostname.startsWith('192.168.') || // Private class C
+            /^172\.(1[6-9]|2\d|3[01])\./.test(hostname); // Private class B (172.16-31.x.x)
+        if (url.protocol === 'http:' && !isLocal) {
+            return 'Warning: HTTP on public server - API keys will be sent unencrypted. Use HTTPS for security.';
+        }
+        return undefined;
+    }
+    catch {
+        return 'Invalid URL format';
+    }
+};
+export const PROVIDER_TEMPLATES = [
+    {
+        id: 'ollama',
+        name: 'Ollama',
+        modelsEndpoint: 'ollama',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'ollama',
+                required: true,
+            },
+            {
+                name: 'baseUrl',
+                prompt: 'Base URL',
+                default: 'http://localhost:11434/v1',
+                validator: urlValidator,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: '',
+                required: true,
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'ollama',
+            baseUrl: answers.baseUrl || 'http://localhost:11434/v1',
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'llama-cpp',
+        name: 'llama.cpp server',
+        modelsEndpoint: 'openai-compatible',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'llama-cpp',
+                required: true,
+            },
+            {
+                name: 'baseUrl',
+                prompt: 'Base URL',
+                default: 'http://localhost:8080/v1',
+                validator: urlValidator,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: '',
+                required: true,
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'llama-cpp',
+            baseUrl: answers.baseUrl || 'http://localhost:8080/v1',
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'lmstudio',
+        name: 'LM Studio',
+        modelsEndpoint: 'openai-compatible',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'lmstudio',
+                required: true,
+            },
+            {
+                name: 'baseUrl',
+                prompt: 'Base URL',
+                default: 'http://localhost:1234/v1',
+                validator: urlValidator,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: '',
+                required: true,
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'lmstudio',
+            baseUrl: answers.baseUrl || 'http://localhost:1234/v1',
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'openrouter',
+        name: 'OpenRouter',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'z-ai/glm-4.7',
+                required: true,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'OpenRouter',
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'OpenRouter',
+            baseUrl: 'https://openrouter.ai/api/v1',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'openai',
+        name: 'OpenAI',
+        modelsEndpoint: 'openai',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'gpt-5-codex',
+                required: true,
+            },
+            {
+                name: 'organizationId',
+                prompt: 'Organization ID (optional)',
+                required: false,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'openai',
+            },
+        ],
+        buildConfig: answers => {
+            const config = {
+                name: answers.providerName || 'openai',
+                baseUrl: 'https://api.openai.com/v1',
+                apiKey: answers.apiKey,
+                models: answers.model
+                    .split(',')
+                    .map(m => m.trim())
+                    .filter(Boolean),
+            };
+            if (answers.organizationId) {
+                config.organizationId = answers.organizationId;
+            }
+            return config;
+        },
+    },
+    {
+        id: 'anthropic',
+        name: 'Anthropic Claude',
+        modelsEndpoint: 'anthropic',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'claude-4-sonnet',
+                required: true,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'anthropic',
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'anthropic',
+            baseUrl: 'https://api.anthropic.com/v1',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'mistral',
+        name: 'Mistral AI',
+        modelsEndpoint: 'mistral',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'devstral-latest',
+                required: true,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'Mistral',
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'Mistral',
+            baseUrl: 'https://api.mistral.ai/v1',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'z-ai',
+        name: 'Z.ai',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'Z.ai',
+                required: true,
+            },
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'glm-4.7, glm-4.5-air',
+                required: true,
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'Z.ai',
+            baseUrl: 'https://api.z.ai/api/paas/v4/',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'z-ai-coding',
+        name: 'Z.ai Coding Subscription',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'Z.ai Coding Subscription',
+                required: true,
+            },
+            {
+                name: 'apiKey',
+                prompt: 'API Key',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'glm-4.7, glm-4.5-air',
+                required: true,
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'Z.ai Coding Subscription',
+            baseUrl: 'https://api.z.ai/api/coding/paas/v4/',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'github-models',
+        name: 'GitHub Models',
+        modelsEndpoint: 'github',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'GitHub Token (PAT with models:read scope)',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'openai/gpt-4o-mini',
+                required: true,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'GitHub Models',
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'GitHub Models',
+            baseUrl: 'https://models.github.ai/inference',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'poe',
+        name: 'Poe',
+        fields: [
+            {
+                name: 'apiKey',
+                prompt: 'API Key (from poe.com/api_key)',
+                required: true,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                default: 'Claude-Sonnet-4, GPT-4o, Gemini-2.5-Pro',
+                required: true,
+            },
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                default: 'Poe',
+            },
+        ],
+        buildConfig: answers => ({
+            name: answers.providerName || 'Poe',
+            baseUrl: 'https://api.poe.com/v1',
+            apiKey: answers.apiKey,
+            models: answers.model
+                .split(',')
+                .map(m => m.trim())
+                .filter(Boolean),
+        }),
+    },
+    {
+        id: 'custom',
+        name: 'Custom Provider',
+        modelsEndpoint: 'openai-compatible',
+        fields: [
+            {
+                name: 'providerName',
+                prompt: 'Provider name',
+                required: true,
+            },
+            {
+                name: 'baseUrl',
+                prompt: 'Base URL',
+                required: true,
+                validator: urlValidator,
+            },
+            {
+                name: 'apiKey',
+                prompt: 'API Key (optional)',
+                required: false,
+                sensitive: true,
+            },
+            {
+                name: 'model',
+                prompt: 'Model name(s) (comma-separated)',
+                required: true,
+            },
+            {
+                name: 'timeout',
+                prompt: 'Request timeout (ms)',
+                default: '30000',
+                validator: value => {
+                    if (!value)
+                        return undefined;
+                    const num = Number(value);
+                    if (Number.isNaN(num) || num <= 0) {
+                        return 'Timeout must be a positive number';
+                    }
+                    return undefined;
+                },
+            },
+        ],
+        buildConfig: answers => {
+            const config = {
+                name: answers.providerName,
+                baseUrl: answers.baseUrl,
+                models: answers.model
+                    .split(',')
+                    .map(m => m.trim())
+                    .filter(Boolean),
+            };
+            if (answers.apiKey) {
+                config.apiKey = answers.apiKey;
+            }
+            if (answers.timeout) {
+                config.timeout = Number(answers.timeout);
+            }
+            return config;
+        },
+    },
+];
+//# sourceMappingURL=provider-templates.js.map
