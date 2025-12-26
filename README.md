@@ -1,3 +1,5 @@
+![demo](demo.gif)
+
 ## gguf-coder
 
 setup
@@ -20,4 +22,5 @@ npm update -g @gguf/coder
 start coding
 ```
 coder
+
 ```
