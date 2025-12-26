@@ -1,0 +1,192 @@
+import { MAX_TOOL_STEPS } from '../../constants.js';
+import { endMetrics, formatMemoryUsage, generateCorrelationId, getCorrelationId, getLogger, startMetrics, withNewCorrelationContext, } from '../../utils/logging/index.js';
+import { generateText, stepCountIs } from 'ai';
+import { convertToModelMessages } from '../converters/message-converter.js';
+import { convertAISDKToolCalls, getToolResultOutput, } from '../converters/tool-converter.js';
+import { extractRootError } from '../error-handling/error-extractor.js';
+import { parseAPIError } from '../error-handling/error-parser.js';
+import { createOnStepFinishHandler, createPrepareStepHandler, } from './streaming-handler.js';
+import { processXMLToolCalls } from './tool-processor.js';
+/**
+ * Main chat handler - orchestrates the entire chat flow
+ */
+export async function handleChat(params) {
+    const { model, currentModel, providerConfig, messages, tools, callbacks, signal, maxRetries, } = params;
+    const logger = getLogger();
+    // Check if already aborted before starting
+    if (signal?.aborted) {
+        logger.debug('Chat request already aborted');
+        throw new Error('Operation was cancelled');
+    }
+    // Start performance tracking
+    const metrics = startMetrics();
+    const correlationId = getCorrelationId() || generateCorrelationId();
+    logger.info('Chat request starting', {
+        model: currentModel,
+        messageCount: messages.length,
+        toolCount: Object.keys(tools).length,
+        correlationId,
+        provider: providerConfig.name,
+    });
+    return await withNewCorrelationContext(async (_context) => {
+        try {
+            // Tools are already in AI SDK format - use directly
+            const aiTools = Object.keys(tools).length > 0 ? tools : undefined;
+            // Convert messages to AI SDK v5 ModelMessage format
+            const modelMessages = convertToModelMessages(messages);
+            logger.debug('AI SDK request prepared', {
+                messageCount: modelMessages.length,
+                hasTools: !!aiTools,
+                toolCount: aiTools ? Object.keys(aiTools).length : 0,
+            });
+            // Tools with needsApproval: false auto-execute in the loop
+            // Tools with needsApproval: true cause interruptions for manual approval
+            // stopWhen controls when the tool loop stops (max MAX_TOOL_STEPS steps)
+            const result = await generateText({
+                model,
+                messages: modelMessages,
+                tools: aiTools,
+                abortSignal: signal,
+                maxRetries,
+                stopWhen: stepCountIs(MAX_TOOL_STEPS), // Allow up to MAX_TOOL_STEPS tool execution steps
+                // Can be used to add custom logging, metrics, or step tracking
+                onStepFinish: createOnStepFinishHandler(callbacks),
+                prepareStep: createPrepareStepHandler(),
+            });
+            // Get the full text from the result
+            const fullText = result.text;
+            logger.debug('AI SDK response received', {
+                responseLength: fullText.length,
+                hasToolCalls: !!(result.toolCalls && result.toolCalls.length > 0),
+                toolCallCount: result.toolCalls?.length || 0,
+            });
+            // Send the complete text to the callback
+            if (fullText) {
+                callbacks.onToken?.(fullText);
+            }
+            // Get tool calls from result
+            const toolCallsResult = result.toolCalls;
+            // Extract auto-executed assistant messages and tool results from steps
+            // These need to be added to the messages array so usage tracking can count them
+            const autoExecutedMessages = [];
+            const steps = result.steps;
+            for (const step of steps) {
+                if (step.toolCalls &&
+                    step.toolResults &&
+                    step.toolCalls.length === step.toolResults.length) {
+                    // This step had tool calls that were auto-executed
+                    // Add the assistant message with tool_calls
+                    const stepToolCalls = convertAISDKToolCalls(step.toolCalls);
+                    autoExecutedMessages.push({
+                        role: 'assistant',
+                        content: step.text || '',
+                        tool_calls: stepToolCalls,
+                    });
+                    // Add the tool result messages
+                    step.toolCalls.forEach((toolCall, idx) => {
+                        const toolResult = step.toolResults[idx];
+                        const resultStr = getToolResultOutput(toolResult.output);
+                        autoExecutedMessages.push({
+                            role: 'tool',
+                            content: resultStr,
+                            tool_call_id: toolCall.toolCallId ||
+                                `tool_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+                            name: toolCall.toolName,
+                        });
+                    });
+                }
+            }
+            // Extract tool calls
+            const toolCalls = [];
+            if (toolCallsResult && toolCallsResult.length > 0) {
+                logger.debug('Processing tool calls from response', {
+                    toolCallCount: toolCallsResult.length,
+                });
+                for (const toolCall of toolCallsResult) {
+                    const tc = convertAISDKToolCalls([toolCall])[0];
+                    toolCalls.push(tc);
+                    logger.debug('Tool call processed', {
+                        toolName: tc.function.name,
+                        hasArguments: !!tc.function.arguments,
+                    });
+                    // Note: onToolCall already fired in onStepFinish - no need to call again
+                }
+            }
+            // Check for XML tool calls if no native ones
+            let content = fullText;
+            const xmlResult = processXMLToolCalls(content, tools, callbacks);
+            if (xmlResult.toolCalls.length > 0) {
+                toolCalls.push(...xmlResult.toolCalls);
+                content = xmlResult.cleanedContent;
+            }
+            // Calculate performance metrics
+            const finalMetrics = endMetrics(metrics);
+            logger.info('Chat request completed successfully', {
+                model: currentModel,
+                duration: `${finalMetrics.duration.toFixed(2)}ms`,
+                responseLength: content.length,
+                toolCallsFound: toolCalls.length,
+                memoryDelta: formatMemoryUsage(finalMetrics.memoryUsage || process.memoryUsage()),
+                correlationId,
+                provider: providerConfig.name,
+            });
+            callbacks.onFinish?.();
+            return {
+                choices: [
+                    {
+                        message: {
+                            role: 'assistant',
+                            content,
+                            tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
+                        },
+                    },
+                ],
+                // Include auto-executed messages so they can be added to message history
+                autoExecutedMessages: autoExecutedMessages.length > 0 ? autoExecutedMessages : undefined,
+            };
+        }
+        catch (error) {
+            // Calculate performance metrics even for errors
+            const finalMetrics = endMetrics(metrics);
+            // Check if this was a user-initiated cancellation
+            if (error instanceof Error && error.name === 'AbortError') {
+                logger.info('Chat request cancelled by user', {
+                    model: currentModel,
+                    duration: `${finalMetrics.duration.toFixed(2)}ms`,
+                    correlationId,
+                    provider: providerConfig.name,
+                });
+                throw new Error('Operation was cancelled');
+            }
+            // Log the error with performance metrics
+            logger.error('Chat request failed', {
+                model: currentModel,
+                duration: `${finalMetrics.duration.toFixed(2)}ms`,
+                error: error instanceof Error ? error.message : error,
+                errorName: error instanceof Error ? error.name : 'Unknown',
+                correlationId,
+                provider: providerConfig.name,
+                memoryDelta: formatMemoryUsage(finalMetrics.memoryUsage || process.memoryUsage()),
+            });
+            // AI SDK wraps errors in NoOutputGeneratedError with no useful cause
+            // Check if it's a cancellation without an underlying API error
+            if (error instanceof Error &&
+                (error.name === 'AI_NoOutputGeneratedError' ||
+                    error.message.includes('No output generated'))) {
+                // Check if there's an underlying RetryError with the real cause
+                const rootError = extractRootError(error);
+                if (rootError === error) {
+                    // No underlying error - this is just a cancellation
+                    throw new Error('Operation was cancelled');
+                }
+                // There's a real error underneath, parse it
+                const userMessage = parseAPIError(rootError);
+                throw new Error(userMessage);
+            }
+            // Parse any other error (including RetryError and APICallError)
+            const userMessage = parseAPIError(error);
+            throw new Error(userMessage);
+        }
+    }, correlationId); // End of withNewCorrelationContext
+}
+//# sourceMappingURL=chat-handler.js.map

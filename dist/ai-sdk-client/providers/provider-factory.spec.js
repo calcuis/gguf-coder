@@ -1,0 +1,59 @@
+import test from 'ava';
+import { Agent } from 'undici';
+import { createProvider } from './provider-factory.js';
+test('createProvider creates provider with basic config', t => {
+    const config = {
+        name: 'TestProvider',
+        type: 'openai',
+        models: ['test-model'],
+        config: {
+            baseURL: 'https://api.test.com',
+            apiKey: 'test-key',
+        },
+    };
+    const agent = new Agent();
+    const provider = createProvider(config, agent);
+    t.truthy(provider);
+    t.is(typeof provider, 'function');
+});
+test('createProvider adds OpenRouter headers for openrouter provider', t => {
+    const config = {
+        name: 'OpenRouter',
+        type: 'openai',
+        models: ['test-model'],
+        config: {
+            baseURL: 'https://openrouter.ai/api/v1',
+            apiKey: 'test-key',
+        },
+    };
+    const agent = new Agent();
+    const provider = createProvider(config, agent);
+    t.truthy(provider);
+});
+test('createProvider handles provider with no API key', t => {
+    const config = {
+        name: 'TestProvider',
+        type: 'openai',
+        models: ['test-model'],
+        config: {
+            baseURL: 'https://api.test.com',
+        },
+    };
+    const agent = new Agent();
+    const provider = createProvider(config, agent);
+    t.truthy(provider);
+});
+test('createProvider handles provider with no baseURL', t => {
+    const config = {
+        name: 'TestProvider',
+        type: 'openai',
+        models: ['test-model'],
+        config: {
+            apiKey: 'test-key',
+        },
+    };
+    const agent = new Agent();
+    const provider = createProvider(config, agent);
+    t.truthy(provider);
+});
+//# sourceMappingURL=provider-factory.spec.js.map

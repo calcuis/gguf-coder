@@ -1,0 +1,1 @@
+{"version":3,"file":"types.d.ts","sourceRoot":"","sources":["../../source/ai-sdk-client/types.ts"],"names":[],"mappings":"AAAA;;;GAGG;AACH,MAAM,WAAW,eAAe;IAC/B,IAAI,EAAE,QAAQ,GAAG,MAAM,GAAG,WAAW,GAAG,MAAM,CAAC;IAC/C,OAAO,EAAE,MAAM,GAAG,OAAO,EAAE,CAAC;IAC5B,SAAS,CAAC,EAAE,OAAO,EAAE,CAAC;CACtB"}
