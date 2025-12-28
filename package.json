@@ -1,7 +1,7 @@
 {
 	"name": "@gguf/coder",
 	"main": "dist/cli.js",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "GGUF coder",
 	"keywords": [
 		"ai",
@@ -38,14 +38,13 @@
 	},
 	"files": [
 		"dist",
-		"source/app/prompts/main-prompt.md",
-		"assets/coder-vscode.vsix"
+		"source/app/prompts/main-prompt.md"
 	],
 	"dependencies": {
 		"@ai-sdk/openai-compatible": "2.0.0-beta.57",
 		"@anthropic-ai/tokenizer": "^0.0.4",
 		"@modelcontextprotocol/sdk": "^1.17.3",
-		"@nanocollective/get-md": "^1.0.1",
+		"@gguf/to-md": "^1.0.0",
 		"ai": "6.0.0-beta.130",
 		"cheerio": "^1.1.2",
 		"cli-highlight": "^2.1.11",
