@@ -1,8 +1,8 @@
 {
 	"name": "@gguf/coder",
 	"main": "dist/cli.js",
-	"version": "0.0.8",
-	"description": "GGUF coder",
+	"version": "0.1.0",
+	"description": "Coder",
 	"keywords": [
 		"ai",
 		"cli",
@@ -32,8 +32,7 @@
 		"test:knip": "knip",
 		"format": "biome check --write .",
 		"format:check": "biome check .",
-		"build:vscode": "cd plugins/vscode && pnpm run build && pnpm exec vsce package --allow-missing-repository --skip-license --no-dependencies",
-		"prepublishOnly": "pnpm run build && pnpm run build:vscode",
+		"prepublishOnly": "pnpm run build",
 		"prepare": "husky"
 	},
 	"files": [
