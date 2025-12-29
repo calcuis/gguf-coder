@@ -1,7 +1,7 @@
 {
 	"name": "@gguf/coder",
 	"main": "dist/cli.js",
-	"version": "0.1.0",
+	"version": "0.1.5",
 	"description": "Coder",
 	"keywords": [
 		"ai",
@@ -21,17 +21,6 @@
 		"build": "tsc && tsc-alias && chmod +x dist/cli.js",
 		"dev": "tsc --watch",
 		"start": "node dist/cli.js",
-		"release:nix": "./scripts/update-nix-version.sh",
-		"test:all": "./scripts/test.sh",
-		"test:ava": "ava",
-		"test:ava:coverage": "c8 ava",
-		"test:format": "biome check --no-errors-on-unmatched .",
-		"test:types": "tsc --noEmit",
-		"test:lint": "biome lint .",
-		"test:lint:fix": "biome check --write --unsafe .",
-		"test:knip": "knip",
-		"format": "biome check --write .",
-		"format:check": "biome check .",
 		"prepublishOnly": "pnpm run build",
 		"prepare": "husky"
 	},
@@ -69,8 +58,6 @@
 		"xdg-basedir": "^5.1.0"
 	},
 	"devDependencies": {
-		"@ava/typescript": "^6.0.0",
-		"@biomejs/biome": "^1.9.4",
 		"@types/ink-text-input": "^2.0.5",
 		"@types/node": "^24.3.0",
 		"@types/react": "^19.0.0",
@@ -80,39 +67,9 @@
 		"chalk": "^5.2.0",
 		"husky": "^9.1.7",
 		"ink-testing-library": "^4.0.0",
-		"knip": "^5.66.2",
-		"lint-staged": "^16.2.7",
 		"tsc-alias": "^1.8.16",
 		"tsx": "^4.20.6",
 		"typescript": "^5.0.3"
-	},
-	"lint-staged": {
-		"*.{js,ts,jsx,tsx,json,md}": [
-			"biome check --write --no-errors-on-unmatched"
-		]
-	},
-	"ava": {
-		"extensions": {
-			"ts": "module",
-			"tsx": "module"
-		},
-		"nodeArguments": [
-			"--import=tsx",
-			"--no-warnings"
-		],
-		"files": [
-			"source/**/*.spec.ts",
-			"source/**/*.spec.tsx",
-			"!source/**/*-helpers.ts",
-			"!source/**/test-helpers.ts"
-		],
-		"workerThreads": false,
-		"serial": true,
-		"environmentVariables": {
-			"NODE_ENV": "test",
-			"LC_ALL": "en-US.UTF-8",
-			"LANG": "en-US.UTF-8"
-		}
 	},
 	"pnpm": {
 		"overrides": {
