@@ -1,4 +1,4 @@
-![demo](demo.gif)
+![game](game.gif)
 
 ## gguf-coder
 
@@ -23,3 +23,5 @@ start coding
 ```
 coder
 ```
+
+![demo](demo.gif)
