@@ -2,7 +2,7 @@
 import json, os
 
 def setup_config():
-    print("=== Create agents.config.json for Coder ===")
+    print("=== Create coder.config.json for Coder ===")
 
     provider_name = input("Enter provider name (e.g. lmstudio, ollama, etc.): ").strip()
 
@@ -33,10 +33,10 @@ def setup_config():
         }
     }
 
-    output_file = "agents.config.json"
+    output_file = "coder.config.json"
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
-    print(f"\n✔ agents.config.json created at: {os.path.abspath(output_file)}")
+    print(f"\n✔ coder.config.json created at: {os.path.abspath(output_file)}")
 
 setup_config()
