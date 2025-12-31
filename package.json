@@ -1,7 +1,7 @@
 {
 	"name": "@gguf/coder",
 	"main": "dist/cli.js",
-	"version": "0.2.8",
+	"version": "0.3.0",
 	"description": "Coder",
 	"keywords": [
 		"ai",
@@ -18,7 +18,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"build": "tsc && tsc-alias && chmod +x dist/cli.js",
+		"build": "tsc && tsc-alias",
 		"dev": "tsc --watch",
 		"start": "node dist/cli.js",
 		"prepublishOnly": "pnpm run build",
