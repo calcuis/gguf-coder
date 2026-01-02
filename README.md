@@ -29,5 +29,5 @@ see example below - vibe code a color picker, and edit it with coder afterwards:
 ![demo](demo.gif)
 
 
-the major difference is: when you Coder to `what time is now` you will get the correct answer instead of when was this model being trained/deployed
+the major difference is: when you ask Coder `what time is now` you will get the correct answer instead of when was this model being trained/deployed
 ![time](time.gif)
