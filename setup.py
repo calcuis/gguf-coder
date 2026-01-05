@@ -1,35 +1,42 @@
-
 import json, os
 
-def setup_config():
-    print("=== Create coder.config.json for Coder ===")
-
-    provider_name = input("Enter provider name (e.g. lmstudio, ollama, etc.): ").strip()
-
-    print("\nEnter model names (one per line).")
-    print("Press ENTER on an empty line to finish:")
-    models = []
+def ask_yes_no(prompt: str) -> bool:
     while True:
-        model = input("> ").strip()
-        if not model:
+        answer = input(prompt + " (y/n): ").strip().lower()
+        if answer in ("y", "yes"):
+            return True
+        if answer in ("n", "no"):
+            return False
+        print("Please enter y or n.")
+
+def setup_config():
+    print("=== Create coder.config.json ===\n")
+
+    providers = []
+
+    while True:
+        print("Add a provider:")
+
+        name = input("  Provider name: ").strip()
+        model = input("  Model: ").strip()
+        base_url = input("  Base URL: ").strip()
+
+        provider = {
+            "name": name,
+            "models": [model],
+            "baseUrl": base_url
+        }
+
+        providers.append(provider)
+
+        print()
+        if not ask_yes_no("Add another provider?"):
             break
-        models.append(model)
-
-    if not models:
-        print("Error: at least one model is required.")
-        return
-
-    base_url = input("\nEnter baseUrl (i.e., http://localhost:1234/v1): ").strip()
+        print()
 
     config = {
         "coder": {
-            "providers": [
-                {
-                    "name": provider_name,
-                    "models": models,
-                    "baseUrl": base_url
-                }
-            ]
+            "providers": providers
         }
     }
 
@@ -37,6 +44,7 @@ def setup_config():
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
-    print(f"\n✔ coder.config.json created at: {os.path.abspath(output_file)}")
+    print(f"\n✔ coder.config.json created at:")
+    print(f"  {os.path.abspath(output_file)}")
 
 setup_config()
