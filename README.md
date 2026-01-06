@@ -1,4 +1,4 @@
-![game](game.gif)
+![bubble](bubble.gif)
 
 ## gguf-coder
 
@@ -32,5 +32,5 @@ see example below - vibe code a color picker, and edit it with coder afterwards:
 the major difference is: when you ask Coder `what time is now` you will get the correct answer instead of when was this model being trained/deployed:
 ![time](time.gif)
 
-vibe code a bubble sort demo:
-![bubble](bubble.gif)
+vibe code a tic tac toe game:
+![game](game.gif)
