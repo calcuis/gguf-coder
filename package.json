@@ -1,8 +1,8 @@
 {
-	"name": "@gguf/coder",
+	"name": "gguf-coder",
 	"main": "dist/cli.js",
-	"version": "0.4.9",
-	"description": "Coder",
+	"version": "0.0.5",
+	"description": "GGUF coder",
 	"keywords": [
 		"ai",
 		"cli",
@@ -28,11 +28,11 @@
 		"dist"
 	],
 	"dependencies": {
-		"@ai-sdk/openai-compatible": "2.0.0-beta.57",
+		"@ai-sdk/openai-compatible": "^2.0.3",
 		"@anthropic-ai/tokenizer": "^0.0.4",
 		"@modelcontextprotocol/sdk": "^1.17.3",
 		"@gguf/to-md": "^1.0.0",
-		"ai": "6.0.0-beta.130",
+		"ai": "^6.0.11",
 		"cheerio": "^1.1.2",
 		"cli-highlight": "^2.1.11",
 		"cli-table3": "^0.6.5",
