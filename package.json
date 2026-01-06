@@ -1,7 +1,7 @@
 {
 	"name": "gguf-coder",
 	"main": "dist/cli.js",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"description": "GGUF coder",
 	"keywords": [
 		"ai",
@@ -11,7 +11,7 @@
 	"author": "gguf",
 	"license": "MIT",
 	"bin": {
-		"coder": "dist/cli.js"
+		"ggd": "dist/cli.js"
 	},
 	"type": "module",
 	"engines": {
@@ -21,7 +21,7 @@
 		"build": "tsc && tsc-alias",
 		"dev": "tsc --watch",
 		"start": "node dist/cli.js",
-		"prepublishOnly": "npm run build",
+		"prepublishOnly": "pnpm run build",
 		"prepare": "husky"
 	},
 	"files": [
